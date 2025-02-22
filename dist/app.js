@@ -1183,6 +1183,50 @@
     }
   }
 
+  class Card extends DivComponent {
+    constructor(appState, cardState) {
+      super();
+      this.appState = appState;
+      this.cardState = cardState;
+    }
+
+    render() {
+      this.element.classList.add("card");
+      const existInFavorites = this.appState.favorites.find(
+        (book) => book.key === this.cardState.key
+      );
+      this.element.innerHTML = `
+     <div class="card__image">
+      <img
+        src="https://covers.openlibrary.org/b/olid/${
+          this.cardState.cover_edition_key
+        }-M.jpg"
+        alt="Обложка книги"
+      />
+    </div>
+    <div class="card__info">
+      <div class="card__tag">
+        ${this.cardState.subject ? this.cardState.subject[0] : "✕"}
+      </div>
+      <div class="card__name">${this.cardState.title}</div>
+      <div class="card__author">
+        ${this.cardState.author_name ? this.cardState.author_name[0] : "✕"}
+      </div>
+      <div class="card__footer">
+        <button class="button_add ${existInFavorites ? "button_active" : ""}">
+          ${
+            existInFavorites
+              ? `<img src="./static/favorites.svg" />`
+              : `<img src="./static/favorites-white.svg" />`
+          }
+        </button>
+      </div>
+    </div>
+    `;
+      return this.element;
+    }
+  }
+
   class CardList extends DivComponent {
     constructor(appState, parentState) {
       super();
@@ -1196,7 +1240,10 @@
         return this.element;
       }
       this.element.classList.add("card_list");
-      this.element.innerHTML = `<h1>Найдено книг – ${this.parentState.list.length}</h1>`;
+      this.element.innerHTML = `<h1>Найдено книг – ${this.parentState.numFound}</h1>`;
+      for (const card of this.parentState.list) {
+        this.element.append(new Card(this.appState, card).render());
+      }
       return this.element;
     }
   }
@@ -1204,6 +1251,7 @@
   class MainView extends AbstractView {
     state = {
       list: [],
+      numFound: 0,
       loading: false,
       searchQuery: undefined,
       offset: 0,
@@ -1231,6 +1279,7 @@
           this.state.offset
         );
         this.state.loading = false;
+        this.state.numFound = data.numFound;
         this.state.list = data.docs;
       }
       if (path === "list" || path === "loading") {
