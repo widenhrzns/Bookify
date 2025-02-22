@@ -1150,6 +1150,11 @@
       this.state = state;
     }
 
+    search() {
+      const value = this.element.querySelector("input").value;
+      this.state.searchQuery = value;
+    }
+
     render() {
       this.element.classList.add("search");
       this.element.innerHTML = `
@@ -1166,6 +1171,14 @@
       <img src="./static/search-white.svg" alt="Поиск белая иконка" />
     </button>
     `;
+      this.element
+        .querySelector("button")
+        .addEventListener("click", this.search.bind(this));
+      this.element.querySelector("input").addEventListener("keydown", (event) => {
+        if (event.code === "Enter") {
+          this.search();
+        }
+      });
       return this.element;
     }
   }
@@ -1182,6 +1195,7 @@
       super();
       this.appState = appState;
       this.appState = onChange(this.appState, this.appStateHook.bind(this));
+      this.state = onChange(this.state, this.stateHook.bind(this));
       this.setTitle("Поиск книг");
     }
 
@@ -1189,6 +1203,25 @@
       if (path === "favorites") {
         console.log(path);
       }
+    }
+
+    async stateHook(path) {
+      if (path === "searchQuery") {
+        this.state.loading = true;
+        const data = await this.loadList(
+          this.state.searchQuery,
+          this.state.offset
+        );
+        this.state.loading = false;
+        this.state.list = data.docs;
+      }
+    }
+
+    async loadList(q, offset) {
+      const response = await fetch(
+        `https://openlibrary.org/search.json?q=${q}&offset=${offset}`
+      );
+      return response.json();
     }
 
     render() {
